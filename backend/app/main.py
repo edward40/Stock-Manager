@@ -1,4 +1,3 @@
-```python
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.data import get_stock_data, get_market_movers, get_sp500_data
