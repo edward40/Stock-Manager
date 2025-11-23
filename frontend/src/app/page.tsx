@@ -1,10 +1,46 @@
+"use client";
+
+import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import StockCard from '@/components/StockCard';
 import NewsCard from '@/components/NewsCard';
 import Chart from '@/components/Chart';
-import { Search, TrendingUp, Zap, Globe, Activity } from 'lucide-react';
+import { Search, TrendingUp, Zap, Globe, Activity, Loader2 } from 'lucide-react';
 
 export default function Home() {
+  const [searchSymbol, setSearchSymbol] = useState('');
+  const [stockData, setStockData] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSearch = async () => {
+    if (!searchSymbol.trim()) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // Fetch stock data
+      const stockResponse = await fetch(`http://localhost:8000/api/stock/${searchSymbol}`);
+      if (!stockResponse.ok) throw new Error('Stock not found');
+      const stockJson = await stockResponse.json();
+      setStockData(stockJson);
+
+      // Fetch analysis
+      const analysisResponse = await fetch(`http://localhost:8000/api/analyze/${searchSymbol}`);
+      if (!analysisResponse.ok) throw new Error('Analysis failed');
+      const analysisJson = await analysisResponse.json();
+      setAnalysis(analysisJson);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch data');
+      setStockData(null);
+      setAnalysis(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Mock data for display
   const marketMovers = [
     { symbol: 'AAPL', name: 'Apple Inc.', price: 189.45, change: 2.34, changePercent: 1.25, recommendation: 'BUY' as const },
@@ -35,14 +71,102 @@ export default function Home() {
               <input
                 type="text"
                 placeholder="Search symbol (e.g., AAPL, 2330.TW)..."
-                className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-neutral-500 text-lg px-4"
+                className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-neutral-500 text-lg px-4 outline-none"
+                value={searchSymbol}
+                onChange={(e) => setSearchSymbol(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
-              <button className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-neutral-200 transition-colors">
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-neutral-200 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 Analyze
               </button>
             </div>
           </div>
+
+          {error && (
+            <div className="mt-4 text-rose-400 text-sm">
+              {error}
+            </div>
+          )}
         </div>
+
+        {/* Search Results */}
+        {stockData && analysis && (
+          <div className="mb-12 glass-panel p-8 rounded-xl">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <div className="mb-6">
+                  <h2 className="text-3xl font-bold text-white mb-2">{stockData.name}</h2>
+                  <p className="text-neutral-400">{stockData.symbol}</p>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  <div className="glass-panel p-4 rounded-lg">
+                    <p className="text-neutral-400 text-sm mb-1">Price</p>
+                    <p className="text-2xl font-bold text-white">${stockData.current_price?.toFixed(2) || 'N/A'}</p>
+                  </div>
+                  <div className="glass-panel p-4 rounded-lg">
+                    <p className="text-neutral-400 text-sm mb-1">Market Cap</p>
+                    <p className="text-2xl font-bold text-white">{stockData.market_cap ? `$${(stockData.market_cap / 1e9).toFixed(2)}B` : 'N/A'}</p>
+                  </div>
+                  <div className="glass-panel p-4 rounded-lg">
+                    <p className="text-neutral-400 text-sm mb-1">P/E Ratio</p>
+                    <p className="text-2xl font-bold text-white">{stockData.pe_ratio?.toFixed(2) || 'N/A'}</p>
+                  </div>
+                  <div className="glass-panel p-4 rounded-lg">
+                    <p className="text-neutral-400 text-sm mb-1">RSI</p>
+                    <p className="text-2xl font-bold text-white">{analysis.analysis.indicators.RSI?.toFixed(2) || 'N/A'}</p>
+                  </div>
+                </div>
+
+                {stockData.history && stockData.history.length > 0 && (
+                  <div className="glass-panel p-6 rounded-xl">
+                    <h3 className="text-lg font-bold text-white mb-4">Price History</h3>
+                    <Chart data={stockData.history.slice(-90)} />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className={`glass-panel p-6 rounded-xl border-t-4 mb-6 ${analysis.analysis.signal === 'BUY' ? 'border-t-emerald-500' :
+                    analysis.analysis.signal === 'SELL' ? 'border-t-rose-500' :
+                      'border-t-yellow-500'
+                  }`}>
+                  <h3 className="text-lg font-bold text-white mb-4">Recommendation</h3>
+                  <div className={`text-4xl font-bold mb-2 ${analysis.analysis.signal === 'BUY' ? 'text-emerald-400' :
+                      analysis.analysis.signal === 'SELL' ? 'text-rose-400' :
+                        'text-yellow-400'
+                    }`}>
+                    {analysis.analysis.signal}
+                  </div>
+                  <p className="text-neutral-400 text-sm">Score: {analysis.analysis.score}</p>
+                </div>
+
+                <div className="glass-panel p-6 rounded-xl">
+                  <h3 className="text-lg font-bold text-white mb-4">Technical Indicators</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-neutral-400 text-sm">SMA 20</p>
+                      <p className="text-white font-medium">{analysis.analysis.indicators.SMA_20?.toFixed(2) || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-400 text-sm">SMA 50</p>
+                      <p className="text-white font-medium">{analysis.analysis.indicators.SMA_50?.toFixed(2) || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-400 text-sm">MACD</p>
+                      <p className="text-white font-medium">{analysis.analysis.indicators.MACD?.toFixed(2) || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Market Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
