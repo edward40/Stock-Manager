@@ -36,8 +36,66 @@ def get_stock_data(symbol: str, period: str = "1y") -> Dict[str, Any]:
 
 def get_market_movers() -> list:
     """
-    Get list of market movers (mock implementation for now as yfinance doesn't provide easy list).
-    In a real app, this would scrape a news site or use a specific API.
+    Get list of market movers.
+    Simulating 'movers' by fetching data for a list of popular active stocks
+    and sorting by absolute percentage change.
     """
-    # This is a placeholder. Real implementation would require a different source.
-    return []
+    tickers = ['NVDA', 'TSLA', 'AMD', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NFLX', 'INTC']
+    movers = []
+    
+    try:
+        # Batch fetch for efficiency
+        data = yf.download(tickers, period="1d", group_by='ticker', progress=False)
+        
+        for ticker in tickers:
+            try:
+                # Handle multi-level column index from yfinance
+                if len(tickers) > 1:
+                    hist = data[ticker]
+                else:
+                    hist = data
+                
+                if not hist.empty and len(hist) > 0:
+                    current_price = hist['Close'].iloc[-1]
+                    open_price = hist['Open'].iloc[-1]
+                    change = current_price - open_price
+                    change_percent = (change / open_price) * 100
+                    
+                    movers.append({
+                        "symbol": ticker,
+                        "name": ticker, # yfinance download doesn't give names easily, using ticker as fallback
+                        "price": float(current_price),
+                        "change": float(change),
+                        "changePercent": float(change_percent),
+                        "recommendation": "BUY" if change_percent > 0 else "SELL" # Simple logic for demo
+                    })
+            except Exception:
+                continue
+                
+        # Sort by absolute change percent to show most volatile
+        movers.sort(key=lambda x: abs(x['changePercent']), reverse=True)
+        return movers[:4] # Return top 4
+    except Exception as e:
+        print(f"Error fetching market movers: {e}")
+        return []
+
+def get_sp500_data() -> list:
+    """
+    Fetch S&P 500 (^GSPC) data for the last 3 months.
+    """
+    try:
+        ticker = yf.Ticker("^GSPC")
+        # Fetch 3 months of data as requested
+        history = ticker.history(period="3mo")
+        
+        if history.empty:
+            return []
+            
+        dates = history.index.strftime('%b %d').tolist()
+        prices = history['Close'].tolist()
+        
+        # Downsample if too many points for the chart (optional, but good for UI)
+        return [{"date": d, "price": p} for d, p in zip(dates, prices)]
+    except Exception as e:
+        print(f"Error fetching S&P 500 data: {e}")
+        return []
