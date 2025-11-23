@@ -57,10 +57,11 @@ Your backend will be available at: `https://stock-manager-api.onrender.com`
 1. Click "Add New..." → "Project"
 2. Import `edward40/Stock-Manager`
 3. Configure:
-   - **Framework Preset**: Next.js
-   - **Root Directory**: `frontend`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `.next`
+   - **Framework Preset**: Next.js (auto-detected)
+   - **Root Directory**: `frontend` ⚠️ **IMPORTANT: Click "Edit" and set to `frontend`**
+   - **Build Command**: Leave as default (`npm run build`)
+   - **Output Directory**: Leave as default (`.next`)
+   - **Install Command**: Leave as default (`npm install`)
 
 ### 2.3 Add Environment Variable
 In "Environment Variables" section, add:
