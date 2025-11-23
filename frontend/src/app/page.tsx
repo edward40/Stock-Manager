@@ -14,8 +14,38 @@ export default function Home() {
   const [searchSymbol, setSearchSymbol] = useState('');
   const [stockData, setStockData] = useState<any>(null);
   const [analysis, setAnalysis] = useState<any>(null);
+  const [marketMovers, setMarketMovers] = useState<any[]>([]);
+  const [sp500Data, setSp500Data] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Fetch initial market data
+  import { useEffect } from 'react';
+
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        const [moversRes, sp500Res] = await Promise.all([
+          fetch(`${API_URL}/api/market-movers`),
+          fetch(`${API_URL}/api/sp500`)
+        ]);
+
+        if (moversRes.ok) {
+          const movers = await moversRes.json();
+          setMarketMovers(movers);
+        }
+
+        if (sp500Res.ok) {
+          const sp500 = await sp500Res.json();
+          setSp500Data(sp500);
+        }
+      } catch (e) {
+        console.error("Failed to fetch market data", e);
+      }
+    };
+
+    fetchMarketData();
+  }, []);
 
   const handleSearch = async () => {
     if (!searchSymbol.trim()) return;
@@ -43,14 +73,6 @@ export default function Home() {
       setLoading(false);
     }
   };
-
-  // Mock data for display
-  const marketMovers = [
-    { symbol: 'AAPL', name: 'Apple Inc.', price: 189.45, change: 2.34, changePercent: 1.25, recommendation: 'BUY' as const },
-    { symbol: 'TSLA', name: 'Tesla, Inc.', price: 245.67, change: -5.12, changePercent: -2.04, recommendation: 'HOLD' as const },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 485.09, change: 12.45, changePercent: 2.63, recommendation: 'BUY' as const },
-    { symbol: 'AMD', name: 'Adv. Micro Devices', price: 138.00, change: 4.50, changePercent: 3.37, recommendation: 'BUY' as const },
-  ];
 
   return (
     <div className="min-h-screen bg-[url('/grid.svg')] bg-fixed">
@@ -183,14 +205,18 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {marketMovers.map((stock) => (
-                <StockCard key={stock.symbol} {...stock} />
-              ))}
+              {marketMovers.length > 0 ? (
+                marketMovers.map((stock) => (
+                  <StockCard key={stock.symbol} {...stock} />
+                ))
+              ) : (
+                <div className="col-span-2 text-center text-neutral-500 py-8">Loading market data...</div>
+              )}
             </div>
 
             <div className="glass-panel p-6 rounded-xl">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-white">S&P 500 Performance</h3>
+                <h3 className="text-lg font-bold text-white">S&P 500 Performance (3M)</h3>
                 <div className="flex gap-2">
                   {['1D', '1W', '1M', '3M', '1Y', 'ALL'].map((period) => (
                     <button key={period} className="px-3 py-1 rounded-lg text-xs font-medium bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors">
@@ -199,15 +225,11 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-              <Chart data={[
-                { date: 'Jan', price: 4000 },
-                { date: 'Feb', price: 4100 },
-                { date: 'Mar', price: 4050 },
-                { date: 'Apr', price: 4200 },
-                { date: 'May', price: 4150 },
-                { date: 'Jun', price: 4300 },
-                { date: 'Jul', price: 4400 },
-              ]} />
+              {sp500Data.length > 0 ? (
+                <Chart data={sp500Data} />
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-neutral-500">Loading chart...</div>
+              )}
             </div>
           </div>
 
