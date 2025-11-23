@@ -7,6 +7,9 @@ import NewsCard from '@/components/NewsCard';
 import Chart from '@/components/Chart';
 import { Search, TrendingUp, Zap, Globe, Activity, Loader2 } from 'lucide-react';
 
+// API URL configuration - uses environment variable in production, localhost in development
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function Home() {
   const [searchSymbol, setSearchSymbol] = useState('');
   const [stockData, setStockData] = useState<any>(null);
@@ -22,13 +25,13 @@ export default function Home() {
 
     try {
       // Fetch stock data
-      const stockResponse = await fetch(`http://localhost:8000/api/stock/${searchSymbol}`);
+      const stockResponse = await fetch(`${API_URL}/api/stock/${searchSymbol}`);
       if (!stockResponse.ok) throw new Error('Stock not found');
       const stockJson = await stockResponse.json();
       setStockData(stockJson);
 
       // Fetch analysis
-      const analysisResponse = await fetch(`http://localhost:8000/api/analyze/${searchSymbol}`);
+      const analysisResponse = await fetch(`${API_URL}/api/analyze/${searchSymbol}`);
       if (!analysisResponse.ok) throw new Error('Analysis failed');
       const analysisJson = await analysisResponse.json();
       setAnalysis(analysisJson);
@@ -133,13 +136,13 @@ export default function Home() {
 
               <div>
                 <div className={`glass-panel p-6 rounded-xl border-t-4 mb-6 ${analysis.analysis.signal === 'BUY' ? 'border-t-emerald-500' :
-                    analysis.analysis.signal === 'SELL' ? 'border-t-rose-500' :
-                      'border-t-yellow-500'
+                  analysis.analysis.signal === 'SELL' ? 'border-t-rose-500' :
+                    'border-t-yellow-500'
                   }`}>
                   <h3 className="text-lg font-bold text-white mb-4">Recommendation</h3>
                   <div className={`text-4xl font-bold mb-2 ${analysis.analysis.signal === 'BUY' ? 'text-emerald-400' :
-                      analysis.analysis.signal === 'SELL' ? 'text-rose-400' :
-                        'text-yellow-400'
+                    analysis.analysis.signal === 'SELL' ? 'text-rose-400' :
+                      'text-yellow-400'
                     }`}>
                     {analysis.analysis.signal}
                   </div>

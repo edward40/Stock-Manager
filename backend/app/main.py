@@ -2,13 +2,16 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.data import get_stock_data
 from app.analysis import calculate_technical_indicators
+import os
 
 app = FastAPI(title="Stock Professional Analysis API")
 
-# Configure CORS
+# Configure CORS - support both development and production
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
