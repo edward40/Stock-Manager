@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import StockCard from '@/components/StockCard';
 import NewsCard from '@/components/NewsCard';
@@ -20,7 +20,6 @@ export default function Home() {
   const [error, setError] = useState('');
 
   // Fetch initial market data
-  import { useEffect } from 'react';
 
   useEffect(() => {
     const fetchMarketData = async () => {
