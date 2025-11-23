@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactCompiler: true,
+    distDir: '.next',
     async rewrites() {
         return [
             {
